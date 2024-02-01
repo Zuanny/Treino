@@ -10,7 +10,8 @@ class ExportTest extends TestCase
     #[Test]
     public function ShouldCreateWorkout()
     {
-        $Workout = new Workout('Peito');
+        $user = new User('Rodrigo');
+        $Workout = new Workout('Peito', $user->ID);
         $this->assertIsString($Workout->ID);
 
         $exercise = new Exercise('Supino Reto', 'Peito');
@@ -24,11 +25,13 @@ class Workout {
     public string $ID;
     public string $Name;
     private array $Lines = [];
+    public string $UserID;
 
-    public function __construct(string $Name)
+    public function __construct(string $Name, string $UserID)
     {
         $this->ID = uniqid();
         $this->Name = $Name;
+        $this->UserID = $UserID;
     }
 
     public function addLine(WorkoutLine $Workout): void
@@ -94,5 +97,16 @@ class WorkoutLine {
         $this->Rest = $Rest;
     }
 
+}
+
+class User{
+    public string $ID;
+    private string $Name;
+
+    public function __construct(string $Name)
+    {
+        $this->ID = uniqid();
+        $this->Name = $Name;
+    }
 }
 
