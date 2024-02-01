@@ -10,14 +10,23 @@ class ExportTest extends TestCase
     #[Test]
     public function ShouldCreateWorkout()
     {
-        $user = new User('Rodrigo');
-        $Workout = new Workout('Peito', $user->ID);
-        $this->assertIsString($Workout->ID);
+        $NUser = new User('RodStub');
 
+        $workoutRepository = $this->createStub(MongoWorkoutRepository::Class);
+        $userRepository = $this->createStub(MongoUserRepository::Class);
+
+        $workoutRepository->method('save')->willReturn(null);
+        $userRepository->method('getByID')->willReturn($NUser);
+
+
+
+        $createUserService = new CreateWorkoutService($workoutRepository, $userRepository);
         $exercise = new Exercise('Supino Reto', 'Peito');
         $workoutLine = new WorkoutLine($exercise, 2, 10, 8.5, 300 );
-        $Workout->addLine($workoutLine);
-        $this->assertNotEmpty($Workout->show());
+
+        $WorkoutFinal = $createUserService->exec('Peito', $NUser->ID, [$workoutLine]);
+
+        $this->assertContainsEquals($workoutLine, $WorkoutFinal->show());
     }
 }
 
@@ -37,6 +46,11 @@ class Workout {
     public function addLine(WorkoutLine $Workout): void
     {
         $this->Lines[] = $Workout;
+    }
+    public function addLines(array $WorkoutList): void
+    {
+        foreach ($WorkoutList as $Workout)
+            $this->Lines[] = $Workout;
     }
     public function show(){
         return $this->Lines;
@@ -99,7 +113,7 @@ class WorkoutLine {
 
 }
 
-class User{
+class User {
     public string $ID;
     private string $Name;
 
@@ -110,3 +124,54 @@ class User{
     }
 }
 
+class CreateWorkoutService {
+    private readonly IWorkoutRepository $__WorkoutRepository;
+    private readonly IUserRepository $__UserRepository;
+    public function __construct(IWorkoutRepository $WorkoutRepository, IUserRepository $__UserRepository)
+    {
+        $this->__WorkoutRepository = $WorkoutRepository;
+        $this->__UserRepository = $__UserRepository;
+    }
+    public function exec(
+        string $WorkoutName,
+        string $UserID,
+        array $WorkoutList
+    ): Workout
+    {
+        $userID = $this->__UserRepository->getByID($UserID);
+        $Workout = new Workout($WorkoutName, $userID->ID);
+        $Workout->addLines($WorkoutList);
+        $this->__WorkoutRepository->save($Workout);
+        return $Workout;
+    }
+}
+
+interface IWorkoutRepository{
+public function save(Workout $Workout);
+}
+
+interface IUserRepository{
+    public function save(User $user): void;
+    public function getByID(string $ID): User;
+}
+
+class MongoWorkoutRepository implements IWorkoutRepository {
+
+    public function save(Workout $Workout)
+    {
+        // TODO: Implement save() method.
+    }
+}
+
+class MongoUserRepository implements IUserRepository{
+
+    public function save(User $user): void
+    {
+        // TODO: Implement save() method.
+    }
+
+    public function getByID(string $ID): User
+    {
+        return new User('rods');
+    }
+}
